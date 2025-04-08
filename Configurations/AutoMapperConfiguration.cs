@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Task_Management_System.DTOs.UserDto;
 using Task_Management_System.Models;
 
 namespace Task_Management_System.Configurations
