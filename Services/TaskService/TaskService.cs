@@ -46,7 +46,6 @@ namespace Task_Management_System.Services.TaskService
                             Id = Guid.NewGuid(),
                             Name = issueDto.Name,
                             Description = issueDto.Description,
-                            //AssignedUserTo = issueDto.AssignedTo ?? null,//String.IsNullOrEmpty(userrole.RoleId) ? (Guid?)null : new Guid(userrole.RoleId)
                             EstimatedTimeInMinutes = issueDto.EstimatedTimeInMinutes,
                             CreatedBy = user,
                             CreatedDate = DateTime.Now,
@@ -75,7 +74,7 @@ namespace Task_Management_System.Services.TaskService
             }
             else
             {
-                throw new Exception("cannot create issue with same name");
+                throw new Exception("cannot create task with same name");
             }
         }
 
@@ -514,85 +513,62 @@ namespace Task_Management_System.Services.TaskService
                 getIssue.Complexity = dto.Complexity.Value;
             }
 
-            //uint initializedTime = getIssue.TimeSpent + timeSpent;
 
-            getIssue.TimeSpent += dto.TimeSpent != null ? (uint)dto.TimeSpent : default;
+            var dateBetween = CheckDate(dto.StartDate, dto.EndDate);
 
-            uint initializedTime = getIssue.TimeSpent;
-            if (dto.EstimatedTimeInMinute.HasValue)
+            if (dto.StartDate > dto.EndDate)
             {
-                getIssue.EstimatedTimeInMinutes = dto.EstimatedTimeInMinute.Value;
+                throw new Exception( "Check the date interval");
+            }
+            getIssue.StartDate = dto.StartDate;
+            getIssue.EndDate = dto.EndDate;
 
-                if (initializedTime > dto.EstimatedTimeInMinute)
-                {
-                    throw new Exception("Time spent can't be greater than estimated time");
-                }
-                else
-                {
-                    uint v = initializedTime > dto.EstimatedTimeInMinute ? throw new Exception("reduce time spent") : getIssue.TimeSpent = initializedTime;
+            //getIssue.TimeSpent += dto.TimeSpent != null ? (uint)dto.TimeSpent : default;
 
-                    if (dto.IssueLevel < 100 && dto.IssueLevel > 0 || v > 0)
-                    {
-                        getIssue.IssueLevel = dto.IssueLevel != null ? (int)dto.IssueLevel.Value : default;
-                        getIssue.Progress = Progress.InProcess;
-                    }
-                    else if (dto.IssueLevel == 100 || v == dto.EstimatedTimeInMinute)
-                    {
-                        getIssue.IssueLevel = 100;
-                        getIssue.Progress = Progress.Done;
-                    }
-                    else
-                    {
-                        if (getIssue.IssueLevel == 0)
-                        {
-                            //continue
-                        }
-                        else if (getIssue.IssueLevel < 0)
-                        {
-                            throw new InvalidOperationException("can't be less than zero");
-                        }
-                        else
-                        {
-                            throw new Exception("can't validate action");
-                        }
-                    }
-                }
+            uint initializedTime = Convert.ToUInt32(dateBetween);
+
+            if (dto.TimeSpent != null)
+            {
+                getIssue.TimeSpent += dto.TimeSpent <= initializedTime ? (uint)dto.TimeSpent :  throw new Exception("Time spent exceed days range");
+            }
+
+
+            if (dto.IssueLevel < 100 && dto.IssueLevel > 0)
+            {
+                getIssue.IssueLevel = dto.IssueLevel != null ? (int)dto.IssueLevel.Value : default;
+                getIssue.Progress = Progress.InProcess;
+            }
+            else if (dto.IssueLevel == 100)
+            {
+                getIssue.IssueLevel = 100;
+                getIssue.Progress = Progress.Done;
             }
             else
             {
-                if (initializedTime > getIssue.EstimatedTimeInMinutes)
+                if (getIssue.IssueLevel == 0|| getIssue.IssueLevel == null)
                 {
-                    throw new Exception(" can't be greater than the time spent");
+                    //continue
+                }
+                else if (getIssue.IssueLevel < 0)
+                {
+                    throw new InvalidOperationException("level cannot be less than zero");
                 }
                 else
                 {
+                    throw new Exception("can't validate action");
+                }
+            }
 
-                    uint v = initializedTime > dto.EstimatedTimeInMinute ? throw new Exception("reduce time spent") : getIssue.TimeSpent = initializedTime;
-                    if (dto.IssueLevel < 100 && dto.IssueLevel > 0)
-                    {
-                        getIssue.IssueLevel = dto.IssueLevel != null ? (int)dto.IssueLevel.Value : default;
-                        getIssue.Progress = Progress.InProcess;
-                    }
-                    else if (dto.IssueLevel == 100)
-                    {
-                        getIssue.IssueLevel = 100;
-                        getIssue.Progress = Progress.Done;
-                    }
-                    else
-                    {
-                        if (getIssue.IssueLevel == 0)
-                        {
-                            //continue
-                        }
-                        else if (getIssue.IssueLevel < 0)
-                        {
-                            throw new InvalidOperationException("can't be less than zero");
-                        }
-                        else
-                        {
-                            throw new Exception("can't validate action");
-                        }
-                    }
+            if (dto.EstimatedTimeInMinute.HasValue)
+            {
+                if ( dto.EstimatedTimeInMinute > initializedTime)
+                {
+                    throw new Exception("estimated time exceeds days range");
+                }
+                else
+                {
+                    getIssue.EstimatedTimeInMinutes = dto.EstimatedTimeInMinute.Value;
+
                 }
             }
 
@@ -660,7 +636,7 @@ namespace Task_Management_System.Services.TaskService
 
             if (getIssue.ParentIssue == getIssue)
             {
-                throw new Exception("Issue can be a sub task of itself");
+                throw new Exception("task can be a sub task of itself");
             }
             return getIssue;
         }

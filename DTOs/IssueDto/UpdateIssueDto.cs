@@ -12,6 +12,10 @@ namespace Task_Management_System.DTOs.IssueDto
         public int? IssueLevel { get; set; }
         public string? Comment { get; set; }
         public string? Note { get; set; }
+
+        public DateOnly StartDate { get; set; }
+
+        public DateOnly EndDate { get; set; }
         public WorkComponent? Workdone { get; set; }
     }
 }

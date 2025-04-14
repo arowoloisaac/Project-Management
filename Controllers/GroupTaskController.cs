@@ -98,7 +98,7 @@ namespace Task_Management_System.Controllers
         [HttpPost]
         [Route("organization={organizationId}/group={groupId}/project={projectId}/create-issue")]
         public async Task<IActionResult> CreateIssue([Required] Guid projectId, Guid groupId,
-            Guid organizationId, Guid? assignedTo, CreateGroupIssueDto createIssue)
+            Guid organizationId, CreateGroupIssueDto createIssue)
         {
             try
             {
@@ -117,10 +117,10 @@ namespace Task_Management_System.Controllers
                     if (role == null || role.Name == ApplicationRoleNames.OrganizationMember
                         || role.Name == ApplicationRoleNames.OrganizationAdministrator)
                     {
-                        return Forbid("Access Denied: You are not a member in the group");
+                        return Forbid("Access Denied: You are not a member of the group");
                     }
 
-                    return Ok(await task.CreateIssues(projectId, createIssue, assignedTo, user.Value));
+                    return Ok(await task.CreateIssues(projectId, createIssue, user.Value));
                 }
             }
             catch (Exception ex)
@@ -132,7 +132,7 @@ namespace Task_Management_System.Controllers
 
         [HttpPost]
         [Route("organization={organizationId}/group={groupId}/project={projectId}/issue={parentIssueId}/create-subIssue")]
-        public async Task<IActionResult> CreateSubIssue(Guid projectId, Guid groupId, Guid? assignedTo, Guid organizationId, CreateGroupIssueDto issueDto, Guid parentIssueId)
+        public async Task<IActionResult> CreateSubIssue(Guid projectId, Guid groupId, Guid organizationId, CreateGroupIssueDto issueDto, Guid parentIssueId)
         {
             try
             {
@@ -151,7 +151,7 @@ namespace Task_Management_System.Controllers
                         return Forbid("Access Denied: You are not a member in the group");
                     }
 
-                    return Ok(await task.CreateChildTask(projectId, issueDto, assignedTo, parentIssueId, user.Value));
+                    return Ok(await task.CreateChildTask(projectId, issueDto, parentIssueId, user.Value));
                 }
 
             }

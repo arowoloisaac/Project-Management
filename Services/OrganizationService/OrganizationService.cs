@@ -68,6 +68,14 @@ namespace Task_Management_System.Services.OrganizationService
                         {
                             throw new Exception("Unable to add user to role");
                         }
+
+                        await _context.OrganizationUser.AddAsync(new OrganizationUser
+                        {
+                            Id = Guid.NewGuid(),
+                            Role = getRole,
+                            User = user,
+                            Organization = addOrganization
+                        });
                     }
                     else
                     {

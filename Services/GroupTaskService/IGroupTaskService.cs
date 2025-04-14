@@ -10,11 +10,11 @@ namespace Task_Management_System.Services.GroupIssueService
 
         Task<IssueResponse> GetIssuesPaginated(IssueType? issueType, Complexity? complexity, Progress? progress, int? page, int itemPerPage, Guid projectId);
 
-        Task<string> CreateIssues(Guid projectId, CreateGroupIssueDto issueDto, Guid? assignTo, string mail);
+        Task<string> CreateIssues(Guid projectId, CreateGroupIssueDto issueDto, string mail);
 
         Task<string> UpdateIssues(Guid issueId, UpdateIssueDto dto, Guid? assignedTo, Guid projectId, string mail);
 
-        Task<string> CreateChildTask(Guid projectId, CreateGroupIssueDto subIssueDto, Guid? assignTo, Guid parentIssueId, string mail);
+        Task<string> CreateChildTask(Guid projectId, CreateGroupIssueDto subIssueDto, Guid parentIssueId, string mail);
 
         Task<List<RetrieveIssue>> GetIssue(Guid projectId);
 

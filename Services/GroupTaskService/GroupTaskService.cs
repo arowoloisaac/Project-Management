@@ -33,7 +33,7 @@ namespace Task_Management_System.Services.GroupIssueService
             await context.SaveChangesAsync();
         }
 
-        public async Task<string> CreateIssues(Guid projectId, CreateGroupIssueDto issueDto, Guid? assignTo, string mail)
+        public async Task<string> CreateIssues(Guid projectId, CreateGroupIssueDto issueDto, string mail)
         {
             var user = await config.GetUser(mail);
 
@@ -64,7 +64,7 @@ namespace Task_Management_System.Services.GroupIssueService
                             Progress = Progress.Todo,
                             IssueType = issueDto.IssueType,
                             Project = checkProject,
-                            AssignedTo = assignTo.HasValue ? await config.GetUserById(assignTo.Value.ToString()) : null,
+                            AssignedTo = issueDto.AssignedTo.HasValue ? await config.GetUserById(issueDto.AssignedTo.Value.ToString()) : null,
                             User = user,
 
                         });
@@ -87,7 +87,7 @@ namespace Task_Management_System.Services.GroupIssueService
             }
         }
 
-        public async Task<string> CreateChildTask(Guid projectId, CreateGroupIssueDto issueDto, Guid? assignTo, Guid parentIssueId, string mail)
+        public async Task<string> CreateChildTask(Guid projectId, CreateGroupIssueDto issueDto, Guid parentIssueId, string mail)
         {
             var user = await config.GetUser(mail);
 
@@ -119,7 +119,7 @@ namespace Task_Management_System.Services.GroupIssueService
                                 Id = Guid.NewGuid(),
                                 Name = issueDto.Name,
                                 Description = issueDto.Description,
-                                AssignedTo = assignTo.HasValue ? await config.GetUserById(assignTo.Value.ToString()) : null,
+                                AssignedTo = issueDto.AssignedTo.HasValue ? await config.GetUserById(issueDto.AssignedTo.Value.ToString()) : null,
                                 EstimatedTimeInMinutes = issueDto.EstimatedTimeInMinutes,
                                 CreatedBy = user,
                                 CreatedDate = DateTime.Now,
@@ -264,7 +264,7 @@ namespace Task_Management_System.Services.GroupIssueService
                 query = query.Where(filter => filter.Progress == progress.Value);
             }
 
-            var getIssues = await query.Where(find => find.Project.Id == projectId).ToListAsync();
+            var getIssues = await query.Where(find => find.Project.Id == projectId).Include(user => user.AssignedTo).ToListAsync();
 
             if (getIssues.Count <= 0)
             {
@@ -295,13 +295,18 @@ namespace Task_Management_System.Services.GroupIssueService
                 int itemEnd = Math.Min(currentPage * pageResult, totalItems) + (itemStart - 1);
 
 
-                var retrievedIssues = getIssues.Select(find => new RetrieveIssue
+                var retrievedIssues = getIssues.Select(tsk => new RetrieveIssue
                 {
-                    id = find.Id,
-                    Name = find.Name,
-                    Progress = find.Progress,
-                    Complexity = find.Complexity,
-                    IssueType = find.IssueType,
+                    id = tsk.Id,
+                    Name = tsk.Name,
+                    Progress = tsk.Progress,
+                    Complexity = tsk.Complexity,
+                    IssueType = tsk.IssueType,
+                    EstimatedTimeInMinute = tsk.EstimatedTimeInMinutes,
+                    TimeSpent = tsk.TimeSpent,
+                    StartDate = tsk.StartDate,
+                    EndDate = tsk.EndDate,
+                    AssignedTo = tsk.AssignedTo.FirstName
                 }).ToList();
 
                 var reponse = new IssueResponse(retrievedIssues, currentPage, totalItems, pageCount, itemStart, itemEnd, getIssues.Count);
@@ -466,76 +471,56 @@ namespace Task_Management_System.Services.GroupIssueService
                 getIssue.Complexity = dto.Complexity.Value;
             }
 
+            //getIssue.TimeSpent += dto.TimeSpent != null ? (uint)dto.TimeSpent : default;
 
-            getIssue.TimeSpent += dto.TimeSpent != null ? (uint)dto.TimeSpent : default;
-
-            uint initializedTime = getIssue.TimeSpent;
-            if (dto.EstimatedTimeInMinute.HasValue)
+            if (dto.IssueLevel < 100 && dto.IssueLevel >= 0)
             {
-                getIssue.EstimatedTimeInMinutes = dto.EstimatedTimeInMinute.Value;
-
-                if (initializedTime > dto.EstimatedTimeInMinute)
-                {
-                    throw new Exception("Time spent can't be greater than estimated time");
-                }
-                else
-                {
-                    uint v = initializedTime > dto.EstimatedTimeInMinute ? throw new Exception("reduce time spent") : getIssue.TimeSpent = initializedTime;
-
-                    if (dto.IssueLevel < 100 && dto.IssueLevel >= 0 || v > 0)
-                    {
-                        getIssue.IssueLevel = dto.IssueLevel != null ? (int)dto.IssueLevel.Value : default;
-                        getIssue.Progress = Progress.InProcess;
-                    }
-                    else if (dto.IssueLevel == 100 || v == dto.EstimatedTimeInMinute)
-                    {
-                        getIssue.IssueLevel = 100;
-                        getIssue.Progress = Progress.Done;
-                    }
-                    else
-                    {
-                        if (getIssue.IssueLevel < 0)
-                        {
-                            throw new InvalidOperationException("can't be less than zero");
-                        }
-                        else
-                        {
-                            throw new Exception("can't validate action");
-                        }
-                    }
-                }
+                getIssue.IssueLevel = dto.IssueLevel != null ? (int)dto.IssueLevel.Value : default;
+                getIssue.Progress = Progress.InProcess;
+            }
+            else if (dto.IssueLevel == 100)
+            {
+                getIssue.IssueLevel = 100;
+                getIssue.Progress = Progress.Done;
             }
             else
             {
-                if (initializedTime > getIssue.EstimatedTimeInMinutes)
+                if (getIssue.IssueLevel < 0)
                 {
-                    throw new Exception(" can't be greater than the time spent");
+                    throw new InvalidOperationException("can't be less than zero");
                 }
                 else
                 {
+                    throw new Exception("can't validate action");
+                }
+            }
+            var dateBetween = CheckDate(dto.StartDate, dto.EndDate);
 
-                    uint v = initializedTime > dto.EstimatedTimeInMinute ? throw new Exception("reduce time spent") : getIssue.TimeSpent = initializedTime;
-                    if (dto.IssueLevel < 100 && dto.IssueLevel >= 0)
-                    {
-                        getIssue.IssueLevel = dto.IssueLevel != null ? (int)dto.IssueLevel.Value : default;
-                        getIssue.Progress = Progress.InProcess;
-                    }
-                    else if (dto.IssueLevel == 100)
-                    {
-                        getIssue.IssueLevel = 100;
-                        getIssue.Progress = Progress.Done;
-                    }
-                    else
-                    {
-                        if (getIssue.IssueLevel < 0)
-                        {
-                            throw new InvalidOperationException("can't be less than zero");
-                        }
-                        else
-                        {
-                            throw new Exception("can't validate action");
-                        }
-                    }
+            if (dto.StartDate > dto.EndDate)
+            {
+                throw new Exception("Check the date interval");
+            }
+
+            getIssue.StartDate = dto.StartDate;
+            getIssue.EndDate = dto.EndDate;
+
+            uint initializedTime = Convert.ToUInt32(dateBetween);
+
+            if (dto.TimeSpent != null)
+            {
+                getIssue.TimeSpent += dto.TimeSpent <= initializedTime ? (uint)dto.TimeSpent : throw new Exception("Time spent exceed days range");
+            }
+
+            if (dto.EstimatedTimeInMinute.HasValue)
+            {
+                if (dto.EstimatedTimeInMinute > initializedTime)
+                {
+                    throw new Exception("estimated time exceeds days range");
+                }
+                else
+                {
+                    getIssue.EstimatedTimeInMinutes = dto.EstimatedTimeInMinute.Value;
+
                 }
             }
 
@@ -569,7 +554,7 @@ namespace Task_Management_System.Services.GroupIssueService
 
             if (getIssue.ParentIssue == getIssue)
             {
-                throw new Exception("Issue can be a sub task of itself");
+                throw new Exception("Task can be a sub task of itself");
             }
             return getIssue;
         }

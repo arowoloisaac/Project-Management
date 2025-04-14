@@ -12,7 +12,7 @@ namespace Task_Management_System.Services.UserService
         private readonly UserManager<User> _userManager;
         private readonly ITokenGenerator _tokenGenerator;
         private readonly IMapper _mapper;
-        private readonly SignInManager<User> _signInManager;
+        //private readonly SignInManager<User> _signInManager;
         private readonly ApplicationDbContext _applicationDbContext;
 
         public UserService(UserManager<User> userManager, ITokenGenerator tokenGenerator, IMapper mapper, ApplicationDbContext dbContext)

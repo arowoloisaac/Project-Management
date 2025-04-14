@@ -316,8 +316,6 @@ namespace Task_Management_System.Services.OrganizationUserService
                     throw new Exception("Organization does not exist");
                 }
 
-                var retrieveRole = await _userConfig.GetRole(userEmail);
-
                 var retriveRequest = await _context.Requests
                     .Where(req => req.OrganizationId == organizationId && req.UserId == user.Id)
                     .SingleOrDefaultAsync();
