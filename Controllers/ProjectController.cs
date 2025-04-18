@@ -30,18 +30,34 @@ namespace Task_Management_System.Controllers
         {
             try
             {
+
+                if (string.IsNullOrEmpty(projectDto.Name))
+                {
+                    return NotFound("Title can't be empty");
+                }
+
                 var user = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email);
 
                 if (user == null)
                 {
-                    return NotFound($"User not found");
+                    var response = new Response
+                    {
+                        Status = "Error",
+                        Message = "User not found",
+                    };
+                    return StatusCode(StatusCodes.Status401Unauthorized, response);
                 }
 
                 return Ok(await _projectService.CreateProject(projectDto, user.Value));
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                var response = new Response
+                {
+                    Message = ex.Message,
+                };
+                return BadRequest(response);
+               // return StatusCode(StatusCodes.Status500InternalServerError, response);
             }
         }
 
@@ -65,9 +81,15 @@ namespace Task_Management_System.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                var response = new Response
+                {
+                    Status = "Error",
+                    Message = ex.Message,
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, response);
             }
         }
+
 
         [HttpGet]
         [Route("{projectId}")]
@@ -79,7 +101,11 @@ namespace Task_Management_System.Controllers
 
                 if (user == null)
                 {
-                    return NotFound("User not found");
+                    return NotFound(new ResponseBody
+                    {
+                        Status = "Error",
+                        Message = "User not found"
+                    });
                 }
                 else
                 {
@@ -88,7 +114,12 @@ namespace Task_Management_System.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                var response = new Response
+                {
+                    Status = "Error",
+                    Message = ex.Message,
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, response);
             }
         }
 

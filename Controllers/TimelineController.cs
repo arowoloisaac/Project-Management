@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Task_Management_System.Services.TaskAnalyserService;
@@ -10,7 +9,7 @@ namespace Task_Management_System.Controllers
     [Route("api/")]
     [ApiController]
     [Authorize]
-    [EnableCors]
+    //[EnableCors]
     public class TimelineController : ControllerBase
     {
         private readonly ITaskAnalyserService analyser;
@@ -21,7 +20,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpGet]
-        [Route("project={projectId}/timeline")]
+        [Route("project/{projectId}/timeline")]
         public async Task<IActionResult> ProjectTimeline(Guid projectId)
         {
             try

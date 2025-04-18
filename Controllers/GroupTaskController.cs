@@ -29,7 +29,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpPut]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/issue={issueId}/assignee={assignedTo}")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/issue/{issueId}/assignee/{assignedTo}")]
         public async Task<IActionResult> AssignIssueToMember([Required] Guid projectId, Guid groupId, Guid organizationId, Guid assignedTo, Guid issueId)
         {
             try
@@ -64,7 +64,7 @@ namespace Task_Management_System.Controllers
 
 
         [HttpPut]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/issue={issueId}/unassignee")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/issue/{issueId}/unassignee")]
         public async Task<IActionResult> UnAssignIssueFromMember(Guid projectId, Guid groupId, Guid organizationId, Guid issueId)
         {
             try
@@ -96,7 +96,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpPost]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/create-issue")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/create-issue")]
         public async Task<IActionResult> CreateIssue([Required] Guid projectId, Guid groupId,
             Guid organizationId, CreateGroupIssueDto createIssue)
         {
@@ -131,7 +131,7 @@ namespace Task_Management_System.Controllers
 
 
         [HttpPost]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/issue={parentIssueId}/create-subIssue")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/issue/{parentIssueId}/create-subIssue")]
         public async Task<IActionResult> CreateSubIssue(Guid projectId, Guid groupId, Guid organizationId, CreateGroupIssueDto issueDto, Guid parentIssueId)
         {
             try
@@ -163,7 +163,7 @@ namespace Task_Management_System.Controllers
 
         //add the project id later
         [HttpDelete]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/issue={issueId}/delete")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/issue/{issueId}/delete")]
         public async Task<IActionResult> DeleteIssue(Guid issueId, Guid projectId, [Required] bool isDeleteChildren, Guid groupId, Guid organizationId)
         {
             try
@@ -178,21 +178,27 @@ namespace Task_Management_System.Controllers
 
                 if (role == null || role.Name != ApplicationRoleNames.GroupAdministrator)
                 {
-                    return Forbid("You can't perform this action");
+                    return Forbid("only administrator can delete");
                 }
-                return Ok();
-                //return Ok(await issue.DeleteIssues(issueId, projectId, isDeleteChildren, user.Value));
+                return Ok(await task.DeleteIssues(issueId, projectId, isDeleteChildren));
             }
             catch (Exception ex)
             {
-                return Problem(ex.Message);
+
+                var response = new Response
+                {
+                    Status = "Error",
+                    Message = ex.Message,
+                };
+                return StatusCode(StatusCodes.Status500InternalServerError, response);
+
             }
         }
 
         //same here
         [HttpPut]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/issue={issueId}/update")]
-        public async Task<IActionResult> UpdateIssue(Guid issueId, Guid projectId, UpdateIssueDto dto, Guid? assignTo, Guid groupId, Guid organizationId)
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/issue/{issueId}/update")]
+        public async Task<IActionResult> UpdateIssue(Guid issueId, Guid projectId, UpdateGroupTaskDto dto, Guid groupId, Guid organizationId)
         {
             try
             {
@@ -209,7 +215,7 @@ namespace Task_Management_System.Controllers
                     return Forbid("You can't perform this action");
                 }
 
-                return Ok(await task.UpdateIssues(issueId, dto, assignTo, projectId, user.Value));
+                return Ok(await task.UpdateIssues(issueId, dto, projectId, user.Value));
             }
             catch (Exception ex)
             {
@@ -218,7 +224,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpGet]
-        [Route("organization={organizationId}/group={groupId}/projectId={projectId}/issues")]
+        [Route("organization/{organizationId}/group/{groupId}/projectId/{projectId}/issues")]
         public async Task<IActionResult> GetProjectIssues
             (Guid projectId, [FromQuery] IssueType? issueType, [FromQuery] Complexity? complexity, [FromQuery] Progress? progress, Guid groupId, Guid organizationId)
         {
@@ -247,7 +253,7 @@ namespace Task_Management_System.Controllers
 
 
         [HttpGet]
-        [Route("organization={organizationId}/group={groupId}/projectId={projectId}/issues/page")]
+        [Route("organization={organizationId}/group/{groupId}/projectId/{projectId}/issues/page")]
         public async Task<IActionResult> GetProjectIssuesPaginated
             (Guid projectId, [FromQuery] IssueType? issueType, [FromQuery] Complexity? complexity,
             [FromQuery] Progress? progress, int? page, int itemPerPage, Guid groupId, Guid organizationId)
@@ -276,7 +282,7 @@ namespace Task_Management_System.Controllers
 
 
         [HttpGet]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/default")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/default")]
         public async Task<IActionResult> GetProjectIssue(Guid projectId, Guid groupId, Guid organizationId)
         {
             try
@@ -305,7 +311,7 @@ namespace Task_Management_System.Controllers
 
 
         [HttpGet]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/issue={issueId}")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/issue/{issueId}")]
         public async Task<IActionResult> GetIssueById(Guid projectId, Guid issueId, Guid groupId, Guid organizationId)
         {
             try
@@ -335,7 +341,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpGet]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/parent={parentIssueId}")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/parent/{parentIssueId}")]
         public async Task<IActionResult> GetSubIssues(Guid projectId, Guid parentIssueId, Guid groupId, Guid organizationId)
         {
             try
@@ -350,7 +356,7 @@ namespace Task_Management_System.Controllers
                 {
                     var role = await configuration.GetUserRoles(Guid.Parse(user.Value), organizationId, groupId);
 
-                    if (role == null || role.Any())
+                    if (role == null)
                     {
                         return Forbid("Access Denied: You do not have the permission");
                     }
@@ -365,7 +371,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpGet]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/issues")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/issues")]
         public async Task<IActionResult> GetIssueAndChild(Guid projectId, Guid groupId, Guid organizationId)
         {
             try
@@ -385,7 +391,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpPost]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/origin={originId}/related={stateId}")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/origin/{originId}/related/{stateId}")]
         public async Task<IActionResult> AddRelatedIssue(Guid originId, Guid stateId, Guid projectId, Guid groupId, Guid organizationId)
         {
             try
@@ -414,7 +420,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpGet]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/origin={originId}/related")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/origin/{originId}/related")]
         public async Task<IActionResult> GetRelatedIssues(Guid originId, Guid projectId, Guid groupId, Guid organizationId)
         {
             try
@@ -441,7 +447,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpDelete]
-        [Route("organization={organizationId}/group={groupId}/project={projectId}/origin={originId}/remove")]
+        [Route("organization/{organizationId}/group/{groupId}/project/{projectId}/origin/{originId}/remove")]
         public async Task<IActionResult> RemoveRelatedIssue(Guid originId, Guid stateId, Guid projectId, Guid groupId, Guid organizationId)
         {
             try

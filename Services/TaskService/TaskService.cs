@@ -83,9 +83,11 @@ namespace Task_Management_System.Services.TaskService
             var user = await _userConfig.GetUser(mail);
             IQueryable<Issue> query = _context.Issues;
 
-            int defaultItemsPerPage = 7;
+            int defaultItemsPerPage = 20;
 
             var items = itemPerPage == 0 ? defaultItemsPerPage : itemPerPage;
+
+            query = query.Where(find => find.Project.Id == projectId && find.CreatedBy == user);
 
             if (issueType.HasValue)
             {
@@ -100,49 +102,62 @@ namespace Task_Management_System.Services.TaskService
                 query = query.Where(filter => filter.Progress == progress.Value);
             }
 
-            var getIssues = await query.Where(find => find.Project.Id == projectId && find.CreatedBy == user).ToListAsync();
+            int totalItems = await query.CountAsync();
 
-            if (getIssues.Count <= 0)
+            //var getIssues = await query.Where(find => find.Project.Id == projectId && find.CreatedBy == user).ToListAsync();
+
+            if (totalItems <= 0)
             {
                 return new IssueResponse(new List<RetrieveIssue>(), 0, 0, 0, 0, 0, 0);
             }
 
             else
             {
-                int pageResult = items;
+                //int pageResult = items;
                 int currentPage = page.HasValue && page > 0 ? page.Value : 1;
+                int pageCount = (int)Math.Ceiling((double)totalItems / items);
 
-
-
-                int totalItems = await query.CountAsync();
-                int pageCount = (int)Math.Ceiling((double)totalItems / pageResult);
-
-                var issues = await query.Skip((currentPage - 1) * pageResult)
-                                        .Take(pageResult)
-                                        .ToListAsync();
-
-                totalItems = issues.Count;
-
-                if (totalItems < 1)
+                if (currentPage > pageCount)
                 {
                     throw new Exception("Page doesn't exist");
                 }
 
-                int itemStart = (currentPage - 1) * pageResult + 1; ;
+                //var issues = await query.Skip((currentPage - 1) * pageResult)
+                //                        .Take(pageResult)
+                //                        .ToListAsync();
 
-                int itemEnd = Math.Min(currentPage * pageResult, totalItems) + (itemStart - 1);
+                var issues = await query
+                    .Skip((currentPage - 1) * items)
+                    .Take(items)
+                    .ToListAsync();
 
+                //totalItems = issues.Count;
 
-                var retrievedIssues = getIssues.Select(find => new RetrieveIssue
+                //if (totalItems < 1)
+                //{
+                //    throw new Exception("Page doesn't exist");
+                //}
+
+                int itemStart = (currentPage - 1) * items + 1;
+                int itemEnd = Math.Min(currentPage * items, totalItems);
+
+                //int itemStart = (currentPage - 1) * pageResult + 1; ;
+                //int itemEnd = Math.Min(currentPage * pageResult, totalItems) + (itemStart - 1);
+
+                var retrievedIssues = issues.Select(find => new RetrieveIssue
                 {
                     id = find.Id,
                     Name = find.Name,
                     Progress = find.Progress,
                     Complexity = find.Complexity,
                     IssueType = find.IssueType,
+                    StartDate = find.StartDate,
+                    EndDate = find.EndDate,
+                    EstimatedTimeInMinute = find.EstimatedTimeInMinutes,
+                    IssueLevel = find.IssueLevel,
                 }).ToList();
 
-                var reponse = new IssueResponse(retrievedIssues, currentPage, totalItems, pageCount, itemStart, itemEnd, getIssues.Count);
+                var reponse = new IssueResponse(retrievedIssues, currentPage, totalItems, pageCount, itemStart, itemEnd, totalItems);
                 return reponse;
             }
         }
@@ -520,6 +535,7 @@ namespace Task_Management_System.Services.TaskService
             {
                 throw new Exception( "Check the date interval");
             }
+            //configure from the fronted!
             getIssue.StartDate = dto.StartDate;
             getIssue.EndDate = dto.EndDate;
 
@@ -531,7 +547,6 @@ namespace Task_Management_System.Services.TaskService
             {
                 getIssue.TimeSpent += dto.TimeSpent <= initializedTime ? (uint)dto.TimeSpent :  throw new Exception("Time spent exceed days range");
             }
-
 
             if (dto.IssueLevel < 100 && dto.IssueLevel > 0)
             {
@@ -583,7 +598,7 @@ namespace Task_Management_System.Services.TaskService
                     Comment = dto.Comment ?? string.Empty,
                     WorkComponent = dto.Workdone.HasValue ? dto.Workdone.Value : (WorkComponent?)null,
                     Id = Guid.NewGuid(),
-                    CreatedDate = DateTime.Now,
+                    CreatedDate = DateTime.UtcNow,
                     User = userId
                 });
                 await _context.SaveChangesAsync();

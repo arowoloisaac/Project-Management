@@ -47,8 +47,7 @@ namespace Task_Management_System.Services.TaskAnalyserService
                     IssueName = itm.Issue.Name,
                     Comment = itm.Comment,
                     Note = itm.Note,
-                    //CreatedDate = itm.,
-                    //UpdatedDate = itm.UpdatedDate,
+                    CreatedDate = itm.CreatedDate,
                 }).ToList();
 
                 return obj;
@@ -87,7 +86,6 @@ namespace Task_Management_System.Services.TaskAnalyserService
                     Comment = itm.Comment,
                     Note = itm.Note,
                     CreatedDate = itm.CreatedDate,
-                    UpdatedDate = itm.ModifiedDate,
                 }).ToList();
 
                 return obj;

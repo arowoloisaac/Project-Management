@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 using Task_Management_System.Models;
 
 namespace Task_Management_System.Data
@@ -55,6 +56,21 @@ namespace Task_Management_System.Data
                 .HasOne(w => w.UpdatedBy)
                 .WithMany()
                 .HasForeignKey(w => w.LastUpdateBy).OnDelete(DeleteBehavior.NoAction);
+
+
+
+            builder.Entity<Project>()
+                .HasOne(p => p.Group)
+                .WithMany(g => g.Projects)
+                //.HasForeignKey(p => p.GroupId)  // You need to add this FK property in Project
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Relationship 2: Group.ProjectCollaborated <-> Project.Collaborator
+            builder.Entity<Project>()
+                .HasOne(p => p.Collaborator)
+                .WithMany(g => g.ProjectCollaborated)
+                //.HasForeignKey(p => p.CollaboratorId)  // You need to add this FK property in Project
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

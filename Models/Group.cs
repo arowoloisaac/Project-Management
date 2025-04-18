@@ -17,6 +17,6 @@
 
         public ICollection<GroupUser>? GroupUsers { get; set; }
 
-        //public ICollection<Project>? ProjectCollaborated {  get; set; }
+        public ICollection<Project>? ProjectCollaborated {  get; set; }
     }
 }

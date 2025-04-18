@@ -32,6 +32,7 @@ namespace Task_Management_System.Services.ProjectService
 
             try
             {
+
                 var validateProject = await _context.Projects.Where(duplicateName => duplicateName.Name == dto.Name && duplicateName.Creator.UserName == user.UserName).SingleOrDefaultAsync();
 
                 if (validateProject != null)
@@ -62,7 +63,7 @@ namespace Task_Management_System.Services.ProjectService
             }
             catch (Exception ex)
             {
-                throw new Exception("An error occurred while saving the project: Server Error or Project Exists" + ex.Message);
+                throw new Exception(ex.Message);
             }
 
         }
@@ -168,11 +169,11 @@ namespace Task_Management_System.Services.ProjectService
         {
             var user = await _userConfig.GetUser(mail);
 
-            int defaultItemsPerPage = 7;
+            int defaultItemsPerPage = 10;
 
             var items = itemPerPage == 0 ? defaultItemsPerPage : itemPerPage;
 
-            IQueryable<Project> query = _context.Projects.Where(findProjects => findProjects.CreatedBy == user.Id);
+            IQueryable<Project> query = _context.Projects.Where(findProjects => findProjects.CreatedBy == user.Id && findProjects.OrganizationId == null);
 
             if (progress.HasValue)
             {
@@ -196,8 +197,6 @@ namespace Task_Management_System.Services.ProjectService
             {
                 int pageResult = items;
                 int currentPage = page.HasValue && page > 0 ? page.Value : 1;
-
-
 
                 int totalItems = await query.CountAsync();
                 int pageCount = (int)Math.Ceiling((double)totalItems / pageResult);

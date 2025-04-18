@@ -12,15 +12,17 @@ namespace Task_Management_System.Services.GroupIssueService
 
         Task<string> CreateIssues(Guid projectId, CreateGroupIssueDto issueDto, string mail);
 
-        Task<string> UpdateIssues(Guid issueId, UpdateIssueDto dto, Guid? assignedTo, Guid projectId, string mail);
+        Task<string> UpdateIssues(Guid issueId, UpdateGroupTaskDto dto, Guid projectId, string mail);
 
         Task<string> CreateChildTask(Guid projectId, CreateGroupIssueDto subIssueDto, Guid parentIssueId, string mail);
+
+        Task<string> DeleteIssues(Guid issueId, Guid projectId, bool isDeleteChildren);
 
         Task<List<RetrieveIssue>> GetIssue(Guid projectId);
 
         Task<IEnumerable<RetrieveIssue>> GetSubIssues(Guid parentId, Guid projectId);
 
-        Task<RetrieveIssue> GetIssueById(Guid projectId, Guid issueId);
+        Task<RetrieveGroupIssueDto> GetIssueById(Guid projectId, Guid issueId);
 
         Task AssignIssue(Guid taskId, Guid assignTo, Guid projectId);
 

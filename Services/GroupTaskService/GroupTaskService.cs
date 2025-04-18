@@ -176,10 +176,46 @@ namespace Task_Management_System.Services.GroupIssueService
                 Progress = issue.Progress,
                 IssueType = issue.IssueType,
                 IssueLevel = issue.IssueLevel,
-                AssignedTo = issue.AssignedTo.FirstName,
+                AssignedTo = issue.AssignedTo != null? issue.AssignedTo.FirstName : "",
             }).ToList();
 
             return response;
+        }
+
+        public async Task<string> DeleteIssues(Guid issueId, Guid projectId, bool isDeleteChildren)
+        {
+            try
+            {
+                var checkProject = await ValidateProject(projectId);
+
+                var issue = await ValidateIssue(issueId, checkProject.Id);
+
+                var issueChildren = await context.Issues
+                        .Where(filter => filter.ParentIssue.Id == issueId)
+                        .ToListAsync();
+
+                if (isDeleteChildren)
+                {
+                    context.Issues.RemoveRange(issueChildren);
+                }
+                else
+                {
+                    foreach (var child in issueChildren)
+                    {
+                        child.ParentIssue = null;
+                    }
+                }
+
+                context.Issues.Remove(issue);
+
+                await context.SaveChangesAsync();
+
+                return "deleted successfully";
+            }
+            catch(Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
         public async Task<IEnumerable<IssueAndChild>> GetIssueAndChild(Guid projectId)
@@ -217,11 +253,11 @@ namespace Task_Management_System.Services.GroupIssueService
             return response;
         }
 
-        public async Task<RetrieveIssue> GetIssueById(Guid projectId, Guid issueId)
+        public async Task<RetrieveGroupIssueDto> GetIssueById(Guid projectId, Guid issueId)
         {
             var exactIssue = await ValidateIssue(issueId, projectId);
 
-            return new RetrieveIssue
+            return new RetrieveGroupIssueDto
             {
                 id = exactIssue.Id,
                 Name = exactIssue.Name,
@@ -234,7 +270,8 @@ namespace Task_Management_System.Services.GroupIssueService
                 TimeSpent = exactIssue.TimeSpent,
                 StartDate = exactIssue.StartDate,
                 EndDate = exactIssue.EndDate,
-                AssignedTo = exactIssue.AssignedTo.FirstName
+                AssignedTo = exactIssue.AssignedTo != null ? exactIssue.AssignedTo.FirstName: "",
+                AssignedToId = exactIssue.AssignedTo != null ? exactIssue.AssignedTo.Id : null,
             };
         }
 
@@ -247,7 +284,7 @@ namespace Task_Management_System.Services.GroupIssueService
         {
             IQueryable<Issue> query = context.Issues;
 
-            int defaultItemsPerPage = 7;
+            int defaultItemsPerPage = 10;
 
             var items = itemPerPage == 0 ? defaultItemsPerPage : itemPerPage;
 
@@ -306,7 +343,7 @@ namespace Task_Management_System.Services.GroupIssueService
                     TimeSpent = tsk.TimeSpent,
                     StartDate = tsk.StartDate,
                     EndDate = tsk.EndDate,
-                    AssignedTo = tsk.AssignedTo.FirstName
+                    AssignedTo = tsk.AssignedTo != null ? tsk.AssignedTo.FirstName : " ",
                 }).ToList();
 
                 var reponse = new IssueResponse(retrievedIssues, currentPage, totalItems, pageCount, itemStart, itemEnd, getIssues.Count);
@@ -349,11 +386,11 @@ namespace Task_Management_System.Services.GroupIssueService
             await context.SaveChangesAsync();
         }
 
-        public async Task<string> UpdateIssues(Guid issueId, UpdateIssueDto dto, Guid? assignedTo, Guid projectId, string mail)
+        public async Task<string> UpdateIssues(Guid issueId, UpdateGroupTaskDto dto, Guid projectId, string mail)
         {
             var user = await config.GetUser(mail);
 
-            await ValidateIssueUpdate(issueId, dto, projectId, assignedTo, user.Id);
+            await ValidateIssueUpdate(issueId, dto, projectId, user.Id);
 
             return "Task successful";
         }
@@ -450,7 +487,7 @@ namespace Task_Management_System.Services.GroupIssueService
         }
 
 
-        private async Task<string> ValidateIssueUpdate(Guid id, UpdateIssueDto dto, Guid projectId, Guid? assignedTo, Guid userId)
+        private async Task<string> ValidateIssueUpdate(Guid id, UpdateGroupTaskDto dto, Guid projectId, Guid userId)
         {
             var retrieveProject = await ValidateProject(projectId);
 
@@ -471,6 +508,12 @@ namespace Task_Management_System.Services.GroupIssueService
                 getIssue.Complexity = dto.Complexity.Value;
             }
 
+            if(dto.AssignedTo.HasValue)
+            {
+                var user = await config.GetUserById(dto.AssignedTo.Value.ToString());
+                getIssue.AssignedTo = user;
+            }
+
             //getIssue.TimeSpent += dto.TimeSpent != null ? (uint)dto.TimeSpent : default;
 
             if (dto.IssueLevel < 100 && dto.IssueLevel >= 0)
@@ -485,13 +528,9 @@ namespace Task_Management_System.Services.GroupIssueService
             }
             else
             {
-                if (getIssue.IssueLevel < 0)
+                if (getIssue.IssueLevel < 0 || getIssue.IssueLevel > 100)
                 {
-                    throw new InvalidOperationException("can't be less than zero");
-                }
-                else
-                {
-                    throw new Exception("can't validate action");
+                    throw new InvalidOperationException("Must be within 0 to 100");
                 }
             }
             var dateBetween = CheckDate(dto.StartDate, dto.EndDate);
@@ -535,7 +574,8 @@ namespace Task_Management_System.Services.GroupIssueService
                     Comment = dto.Comment ?? string.Empty,
                     WorkComponent = dto.Workdone.HasValue ? dto.Workdone.Value : (WorkComponent?)null,
                     Id = Guid.NewGuid(),
-                    User = userId
+                    User = userId, 
+                    CreatedDate = DateTime.UtcNow,
                 });
                 await context.SaveChangesAsync();
             }

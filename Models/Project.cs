@@ -36,7 +36,7 @@ namespace Task_Management_System.Models
         //assign to
         public Group? Group { get; set; }
 
-        //public Group? Collaborator { get; set; }
+        public Group? Collaborator { get; set; }
 
         public Guid? OrganizationId { get; set; }
     }
