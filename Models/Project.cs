@@ -34,10 +34,15 @@ namespace Task_Management_System.Models
 
         //public Guid? GroupId { get; set; }   
         //assign to
+        public Guid? GroupId { get; set; }
         public Group? Group { get; set; }
+
+        public Guid? CollaboratorId {get; set; }
 
         public Group? Collaborator { get; set; }
 
         public Guid? OrganizationId { get; set; }
+
+        public Organization? Organization { get; set; }
     }
 }

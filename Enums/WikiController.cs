@@ -22,7 +22,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpPost]
-        [Route("project={projectId}/wiki/create")]
+        [Route("project/{projectId}/wiki/create")]
         public async Task<IActionResult> CreateWiki(Guid projectId, WikiDto wikiDto)
         {
             try
@@ -41,7 +41,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpGet]
-        [Route("project={projectId}/wiki={wikiId}")]
+        [Route("project/{projectId}/wiki/{wikiId}")]
         public async Task<IActionResult> GetWiki(Guid projectId, Guid wikiId)
         {
             try
@@ -60,7 +60,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpPut]
-        [Route("project={projectId}/wiki={wikiId}/update")]
+        [Route("project/{projectId}/wiki/{wikiId}/update")]
         public async Task<IActionResult> UpdateWiki(Guid projectId, Guid wikiId, WikiDto wikiDto)
         {
             try
@@ -79,7 +79,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpDelete]
-        [Route("project={projectId}/wiki={wikiId}/delete")]
+        [Route("project/{projectId}/wiki/{wikiId}/delete")]
         public async Task<IActionResult> DeleteWiki(Guid projectId, bool deleteChildren, Guid wikiId)
         {
             try
@@ -98,7 +98,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpPost]
-        [Route("project={projectId}/wiki={parentWikiId}/create-child")]
+        [Route("project/{projectId}/wiki{parentWikiId}/create-child")]
         public async Task<IActionResult> CreateWikiChild(Guid projectId, Guid parentWikiId, WikiDto wikiDto)
         {
             try
@@ -117,7 +117,7 @@ namespace Task_Management_System.Controllers
         }
 
         [HttpGet]
-        [Route("project={projectId}/wiki")]
+        [Route("project/{projectId}/wiki")]
         public async Task<IActionResult> GetWikis(Guid projectId)
         {
             try

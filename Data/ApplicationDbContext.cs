@@ -41,6 +41,38 @@ namespace Task_Management_System.Data
         {
             base.OnModelCreating(builder);
 
+            builder.Entity<User>();
+
+            //set projects to null when group is deleted
+            builder.Entity<Group>()
+                .HasMany(p => p.Projects)
+                .WithOne(gp => gp.Group).HasForeignKey(fk => fk.GroupId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            //builder.Entity<Group>()
+            //     .HasMany(p => p.Projects)
+            //     .WithOne(gp => gp.Collaborator)
+            //     .OnDelete(DeleteBehavior.SetNull);
+
+
+
+            //builder.Entity<Project>().HasMany()
+
+            //to delete all projects in a organization
+            builder.Entity<Organization>()
+                .HasMany(p => p.Projects)
+                .WithOne(org => org.Organization)
+                .HasForeignKey(fk => fk.OrganizationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            //to delete groups in the organization
+            builder.Entity<Organization>()
+                .HasMany(grp => grp.Groups)
+                .WithOne(org => org.Organization)
+                .HasForeignKey(fk => fk.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
             builder.Entity<Project>()
                 .HasMany(p => p.Issues)
                 .WithOne(i => i.Project)
@@ -50,7 +82,7 @@ namespace Task_Management_System.Data
                 .HasOne(cr => cr.User)
                 .WithMany()
                 .HasForeignKey(p => p.CreatedById)
-                .OnDelete(DeleteBehavior.NoAction); ;
+                .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<Wiki>()
                 .HasOne(w => w.UpdatedBy)
@@ -61,15 +93,14 @@ namespace Task_Management_System.Data
 
             builder.Entity<Project>()
                 .HasOne(p => p.Group)
-                .WithMany(g => g.Projects)
-                //.HasForeignKey(p => p.GroupId)  // You need to add this FK property in Project
-                .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(g => g.Projects).HasForeignKey(fk => fk.GroupId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Relationship 2: Group.ProjectCollaborated <-> Project.Collaborator
             builder.Entity<Project>()
                 .HasOne(p => p.Collaborator)
                 .WithMany(g => g.ProjectCollaborated)
-                //.HasForeignKey(p => p.CollaboratorId)  // You need to add this FK property in Project
+                .HasForeignKey(p => p.CollaboratorId)  // You need to add this FK property in Project
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

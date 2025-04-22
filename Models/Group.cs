@@ -11,7 +11,10 @@
         public DateTime CreatedDate { get; set; }
 
         public DateTime UpdatedDate { get; set; }
+
         public Guid OrganizationId { get; set; }
+
+        public required Organization Organization { get; set; }
 
         public ICollection<Project>? Projects { get; set; }
 

@@ -24,7 +24,7 @@ namespace Task_Management_System.Services.WikiService
             var getProject = await context.Projects.FindAsync(projectId);
 
             var getWikiProject = await context.Wikis
-                .Where(prj => prj.Project.Id == projectId && prj.Title != wikiDto.Title).SingleOrDefaultAsync();
+                .Where(prj => prj.Project.Id == projectId && prj.Title == wikiDto.Title).SingleOrDefaultAsync();
 
             if (getWikiProject != null)
             {

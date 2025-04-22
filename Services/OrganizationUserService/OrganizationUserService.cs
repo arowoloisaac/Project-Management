@@ -109,9 +109,9 @@ namespace Task_Management_System.Services.OrganizationUserService
                         .Where(u => u.User == retrieveInvitee && u.Organization.Id == organizationId)
                         .SingleOrDefaultAsync();
 
-                    if (retrieveInvitee == null || retrieveInvitee.Email is null && checkIfUserOrgExist != null)
+                    if (retrieveInvitee.Email is null || checkIfUserOrgExist != null)
                     {
-                        throw new Exception("This user does not exist in our system or you have user in the organization");
+                        throw new Exception("This user is already in the organization");
                     }
 
                     else
@@ -144,11 +144,11 @@ namespace Task_Management_System.Services.OrganizationUserService
             }
         }
 
-        public async Task<string> RevokeOrganizationRequest(Guid organizationId, string receiver, string adminId)
+        public async Task<string> RevokeOrganizationRequest(Guid organizationId, string receiver, string adminMail)
         {
             try
             {
-                var adminUser = await _userConfig.ValidateOrganizationUser(adminId, organizationId, AdminRole);
+                var adminUser = await _userConfig.ValidateOrganizationUser(adminMail, organizationId, AdminRole);
 
                 if (adminUser == null)
                 {

@@ -44,6 +44,7 @@ namespace Task_Management_System.Services.OrganizationGroupService
                 Id = Guid.NewGuid(),
                 Name = groupName,
                 OrganizationId = organizationAdmin.Organization.Id,
+                Organization = organizationAdmin.Organization,
                 CreatedDate = DateTime.UtcNow,
                 CreatedBy = organizationAdmin.User
             };
@@ -59,7 +60,7 @@ namespace Task_Management_System.Services.OrganizationGroupService
         {
             var organizationAdmin = await _userConfig.ValidateOrganizationUser(mail, organizationId, admin);
 
-            var getGroup = await _context.Groups.Where(grp => grp.Id == groupId).SingleOrDefaultAsync();
+            var getGroup = await _context.Groups.Include(gu => gu.GroupUsers).Where(grp => grp.Id == groupId).SingleOrDefaultAsync();
 
             if (getGroup != null)
             {
@@ -69,15 +70,38 @@ namespace Task_Management_System.Services.OrganizationGroupService
                     .Include(ro => ro.Role)
                     .Where(grp => grp.Group.Id == getGroup.Id).ToListAsync();
 
-                if (getGroupUser == null)
+                using var transaction = await _context.Database.BeginTransactionAsync();
+
+                try
                 {
+                    if (getGroup.GroupUsers.Any())
+                    {
+                        _context.GroupUsers.RemoveRange(getGroup.GroupUsers);
+                    }
+
                     _context.Groups.Remove(getGroup);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return "Group deleted successfully";
                 }
-                else
+                catch
                 {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+
+                if (getGroupUser.Any())
+                {
+                    //_context.Groups.Remove(getGroup);
                     _context.GroupUsers.RemoveRange(getGroupUser);
-                    _context.Groups.Remove(getGroup);
                 }
+                //else
+                //{
+                //    _context.GroupUsers.RemoveRange(getGroupUser);
+                //    _context.Groups.Remove(getGroup);
+                //}
+                _context.Groups.Remove(getGroup);
                 await _context.SaveChangesAsync();
                 return "Organization deleted successfully";
             }

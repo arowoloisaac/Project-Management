@@ -153,7 +153,7 @@ namespace Task_Management_System.Controllers
         {
             try
             {
-                var user = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Authentication);
+                var user = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email);
 
                 if (user == null)
                 {

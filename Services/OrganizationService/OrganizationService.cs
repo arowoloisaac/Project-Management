@@ -111,16 +111,40 @@ namespace Task_Management_System.Services.OrganizationService
             }
             else
             {
-                var getOrg = await _context.Organizations
-                    .FirstOrDefaultAsync(org => org.Id == organizationId);
+                var getOrg = await _context.Organizations.
+                    Include(grp => grp.Groups)
+                        .ThenInclude(gp => gp.Projects)
+                    .Include(prj => prj.Projects)
+                    .Include(ou => ou.Users)
+                    .Include(req => req.Requests)
+                    .SingleOrDefaultAsync(o => o.Id == organizationId);
 
                 if (getOrg == null)
                 {
                     throw new Exception("Doesn't exist in the database");
                 }
 
-                _context.Organizations.Remove(getOrg);
+                if (getOrg.Projects != null) _context.Projects.RemoveRange(getOrg.Projects);
+
+                if (getOrg.Groups != null)
+                {
+                    foreach (var group in getOrg.Groups) {
+                        if (group.Projects != null) _context.Projects.RemoveRange(group.Projects);
+                        _context.Groups.Remove(group);
+                    }
+                }
+
                 _context.OrganizationUser.RemoveRange(valToRemoveOrg);
+
+                if (getOrg.Users != null)
+                    _context.OrganizationUser.RemoveRange(getOrg.Users);
+
+                // Delete related Requests
+                if (getOrg.Requests != null)
+                    _context.Requests.RemoveRange(getOrg.Requests);
+
+                // Finally, delete the organization itself
+                _context.Organizations.Remove(getOrg);
 
                 await _context.SaveChangesAsync();
                 return "Delete successfully";
